@@ -3,15 +3,8 @@
 <module>
 
 <inherits name="com.vaadin.terminal.gwt.DefaultWidgetSet" />
-
-
-
-
-
 <inherits name="org.vaadin.gwtgraphics.GWTGraphics" />
 <inherits name="org.vaadin.contrib.processing.svg.gwt.ProcessingSVGWidgetSet" />
 <inherits name="org.vaadin.codelabel.CodelabelWidgetset" />
-
 <!--<set-property name="user.agent" value="gecko1_8" />-->
-
 </module>

@@ -2,30 +2,71 @@ package de.renespeck.cytoprocess;
 
 import giny.view.NodeView;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
 import com.vaadin.Application;
-import com.vaadin.ui.Panel;
 import com.vaadin.ui.Window;
 
 import csplugins.layout.algorithms.force.ForceDirectedLayout;
 
 public class TestApplication extends Application {
-    private static final long serialVersionUID = -7506990364469416142L;
 
-    private Window mainWindow;
+    private static final long serialVersionUID = -2030003806795041928L;
+
+    // adds logger properties
+    static {
+        String resource = "de/renespeck/cytoprocess/log4j.properties";
+        InputStream in = TestApplication.class.getClassLoader().getResourceAsStream(resource);
+        Properties properties = null;
+        if (in != null) {
+            properties = new Properties();
+            try {
+                properties.load(in);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        PropertyConfigurator.configure(properties);
+    }
+
+    // gets a logger
+    Logger logger = Logger.getLogger(TestApplication.class);
+
+    final Cytoprocess cp = new Cytoprocess(900, 600);
 
     @Override
     public void init() {
+        logger.info("init");
+        // adds css
         setTheme("Cytoprocess");
 
-        mainWindow = new Window("Test Application");
-        setMainWindow(mainWindow);
-        Panel panel = new Panel();
-        final Cytoprocess cp = new Cytoprocess(900, 600);
-        panel.addComponent(cp);
-        mainWindow.addComponent(cp);
+        // adds Cytoprocess to main window
+        setMainWindow(new Window("Cytoprocess Test Application"));
+        getMainWindow().addComponent(cp);
 
-        int n = 2;
-        int k = 4;
+        // draws a test graph
+        generateTestGraph(2, 4);
+
+        // applies a layout algorithm
+        cp.applyLayoutAlgorithm(new ForceDirectedLayout());
+
+        // repaint is need now
+        cp.repaintGraph();
+
+    }
+
+    public void generateTestGraph(int n, int k) {
+
         Integer nodes[] = new Integer[n * k];
         for (int i = 0; i < n * k; i++)
             nodes[i] = cp.addNode("Node", 100, 100, NodeView.DIAMOND, "rgb(255,0,0)", false);
@@ -40,8 +81,5 @@ public class TestApplication extends Application {
             for (int ic = oc; ic < k - 1; ic++)
                 for (int v = 0; v < n; v++)
                     cp.addEdge(nodes[oc * n + v], nodes[ic * n + v + n], "2");
-
-        cp.applyLayoutAlgorithm(new ForceDirectedLayout());
-        cp.repaintGraph();
     }
 }

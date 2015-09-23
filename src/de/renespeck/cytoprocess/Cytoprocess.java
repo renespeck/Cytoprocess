@@ -1,258 +1,270 @@
 package de.renespeck.cytoprocess;
 
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
+
 import org.apache.log4j.Logger;
 import org.vaadin.contrib.component.svg.processing.Processing;
-
-import de.renespeck.cytoprocess.widgetset.client.ui.VCytoprocess;
 
 import com.vaadin.terminal.PaintException;
 import com.vaadin.terminal.PaintTarget;
 import com.vaadin.ui.ClientWidget;
+
 import cytoscape.CyNetwork;
 import cytoscape.Cytoscape;
-import cytoscape.CytoscapeInit;
 import cytoscape.layout.CyLayoutAlgorithm;
 import cytoscape.view.CyNetworkView;
+import de.renespeck.cytoprocess.widgetset.client.ui.VCytoprocess;
+
 /**
  * @author rspeck
  */
 @ClientWidget(VCytoprocess.class)
 public class Cytoprocess extends Processing {
 
-	private static final long serialVersionUID = 4075833580638275769L;
-	protected final Logger LOGGER = Logger.getLogger(Cytoprocess.class);
+    private static final long serialVersionUID = 4075833580638275769L;
 
-	public enum GraphOperation {
-		REPAINT,
-		ADD_EDGE,
-		REFRESH_NODE_POSTIONS,
-		UPDATE_NODE,
-		FIT_TO_VIEW, // is used as operation on client side
-		ZOOMIN,
-		ZOOMOUT,
-		SCALEIN,
-		SCALEOUT,
-		NOTHING
-	}
-	protected GraphOperation currentGraphOperation = GraphOperation.NOTHING;
-	protected final GraphProperties graphProperties;
-	protected final PaintController paintController = new PaintController();
+    protected final Logger LOGGER = Logger.getLogger(Cytoprocess.class);
 
-	protected final Map<String,Set<Integer>> operationMap = new HashMap<String,Set<Integer>>();
+    public enum GraphOperation {
+        REPAINT,
+        ADD_EDGE,
+        REFRESH_NODE_POSTIONS,
+        UPDATE_NODE,
+        FIT_TO_VIEW, // is used as operation on client side
+        ZOOMIN,
+        ZOOMOUT,
+        SCALEIN,
+        SCALEOUT,
+        NOTHING
+    }
 
+    protected GraphOperation currentGraphOperation = GraphOperation.NOTHING;
+    protected final GraphProperties graphProperties;
+    protected final PaintController paintController = new PaintController();
 
-	/**
+    protected final Map<String, Set<Integer>> operationMap = new HashMap<String, Set<Integer>>();
+
+    /**
 	 */
-	public Cytoprocess(int width, int height){
-		String name = "Cytoprocess";
-//		CytoscapeInit.loadStaticProperties("mode", CytoscapeInit.getCyInitParams().TEXT);
-		
-		Cytoscape.createNewSession();
-//		System.out.println("CytoInits:\n"+CytoscapeInit.getCyInitParams());
-		CyNetwork network = Cytoscape.createNetwork(name, false);
-		CyNetworkView finalView = Cytoscape.createNetworkView(network);
+    public Cytoprocess(int width, int height) {
+        String name = "Cytoprocess";
+        // CytoscapeInit.loadStaticProperties("mode",
+        // CytoscapeInit.getCyInitParams().TEXT);
 
-		graphProperties = new GraphProperties(network, finalView, name);
-		graphProperties.setWidth(width);
-		graphProperties.setHeight(height);
+        Cytoscape.createNewSession();
+        // System.out.println("CytoInits:\n"+CytoscapeInit.getCyInitParams());
+        CyNetwork network = Cytoscape.createNetwork(name, false);
+        CyNetworkView finalView = Cytoscape.createNetworkView(network);
 
-		operationMap.put("deleteNodes" , new HashSet<Integer>());
-		operationMap.put("deleteEdges" , new HashSet<Integer>());
+        graphProperties = new GraphProperties(network, finalView, name);
+        graphProperties.setWidth(width);
+        graphProperties.setHeight(height);
 
-	}
+        operationMap.put("deleteNodes", new HashSet<Integer>());
+        operationMap.put("deleteEdges", new HashSet<Integer>());
+    }
 
-	@Override
-	public void paintContent(final PaintTarget target) throws PaintException {
-		super.paintContent(target);
-		if(LOGGER.isDebugEnabled())LOGGER.debug("request to paintContent ...");
+    @Override
+    public void paintContent(final PaintTarget target) throws PaintException {
+        super.paintContent(target);
+        if (LOGGER.isDebugEnabled())
+            LOGGER.debug("request to paintContent ...");
 
-		target.startTag("cytoprocess");
-		target.addAttribute("operation", currentGraphOperation.toString());
-		switch (currentGraphOperation) {
+        target.startTag("cytoprocess");
+        target.addAttribute("operation", currentGraphOperation.toString());
 
-		case REPAINT:
-			if(LOGGER.isDebugEnabled())LOGGER.debug("REPAINT ...");
+        switch (currentGraphOperation) {
 
-			paintController.repaint(target, graphProperties,operationMap);
-			break;
+        case REPAINT:
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("REPAINT ...");
 
-		case ADD_EDGE:
-			if(LOGGER.isDebugEnabled())LOGGER.debug("ADD_EDGE ...");
+            paintController.repaint(target, graphProperties, operationMap);
+            break;
 
-			paintController.addEdge(target, graphProperties);
-			break;
+        case ADD_EDGE:
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("ADD_EDGE ...");
 
-		case REFRESH_NODE_POSTIONS:
-			if(LOGGER.isDebugEnabled())LOGGER.debug("REFRESH_NODE_POSTIONS ...");
+            paintController.addEdge(target, graphProperties);
+            break;
 
-			paintController.refreshNodePositions(target, graphProperties);
-			break;
+        case REFRESH_NODE_POSTIONS:
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("REFRESH_NODE_POSTIONS ...");
 
-		case UPDATE_NODE:
-			if(LOGGER.isDebugEnabled())LOGGER.debug("UPDATE_NODE ...");
+            paintController.refreshNodePositions(target, graphProperties);
+            break;
 
-			paintController.updateNode(target, graphProperties);
-			break;
-		}
+        case UPDATE_NODE:
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("UPDATE_NODE ...");
 
-		target.endTag("cytoprocess");
-	}
+            paintController.updateNode(target, graphProperties);
+            break;
+        }
 
-	// Handles client requests
-	@Override
-	public void changeVariables(final Object source, final Map<String, Object> variables) {
-		super.changeVariables(source, variables);
-		if(LOGGER.isDebugEnabled()) LOGGER.debug("changeVariables...");
+        target.endTag("cytoprocess");
+    }
 
-		// edgeCreated
-		if (variables.containsKey("linkTo")) {
-			if(LOGGER.isDebugEnabled()) LOGGER.debug("changeVariables edgeCreated...");
+    // Handles client requests
+    @Override
+    public void changeVariables(final Object source, final Map<String, Object> variables) {
+        super.changeVariables(source, variables);
+        if (LOGGER.isDebugEnabled())
+            LOGGER.debug("changeVariables...");
 
-			final String[] edgeCreated = (String[]) variables.get("linkTo");
-			Integer id = addEdge(Integer.valueOf(edgeCreated[0]),Integer.valueOf(edgeCreated[1]),edgeCreated[2]);
-			if(id != null){
-				graphProperties.idsToUpdate.clear();
-				graphProperties.idsToUpdate.add(id);
-				currentGraphOperation = GraphOperation.ADD_EDGE;
-				requestRepaint();
-			}
-		}
+        // edgeCreated
+        if (variables.containsKey("linkTo")) {
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("changeVariables edgeCreated...");
 
-		// deleteNode
-		if (variables.containsKey("deleteNode")) {
-			if(LOGGER.isDebugEnabled()) LOGGER.debug("changeVariables deleteNode...");
+            final String[] edgeCreated = (String[]) variables.get("linkTo");
+            Integer id = addEdge(Integer.valueOf(edgeCreated[0]), Integer.valueOf(edgeCreated[1]), edgeCreated[2]);
+            if (id != null) {
+                graphProperties.idsToUpdate.clear();
+                graphProperties.idsToUpdate.add(id);
+                currentGraphOperation = GraphOperation.ADD_EDGE;
+                requestRepaint();
+            }
+        }
 
-			deleteNode(Integer.valueOf(variables.get("deleteNode").toString()));
-		}
+        // deleteNode
+        if (variables.containsKey("deleteNode")) {
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("changeVariables deleteNode...");
 
-		// deleteEdge
-		if (variables.containsKey("deleteEdge")) {
-			if(LOGGER.isDebugEnabled()) LOGGER.debug("changeVariables deleteEdge...");
+            deleteNode(Integer.valueOf(variables.get("deleteNode").toString()));
+        }
 
-			deleteEdge(Integer.valueOf(variables.get("deleteEdge").toString()));
-		}
+        // deleteEdge
+        if (variables.containsKey("deleteEdge")) {
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("changeVariables deleteEdge...");
 
-		// nodeDoubleClick
-		if (variables.containsKey("nodeDoubleClick")) {
-			if(LOGGER.isDebugEnabled()) LOGGER.debug("changeVariables nodeDoubleClick...");
+            deleteEdge(Integer.valueOf(variables.get("deleteEdge").toString()));
+        }
 
-			final String[] vars = (String[]) variables.get("nodeDoubleClick");
+        // nodeDoubleClick
+        if (variables.containsKey("nodeDoubleClick")) {
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("changeVariables nodeDoubleClick...");
 
-			int id = Integer.valueOf(vars[0]);
-			int  x = Integer.valueOf(vars[1]);
-			int  y = Integer.valueOf(vars[2]);
+            final String[] vars = (String[]) variables.get("nodeDoubleClick");
 
-			graphProperties.idsToUpdate.add(id);
-			nodeDoubleClick(id,x,y);
-		}
+            int id = Integer.valueOf(vars[0]);
+            int x = Integer.valueOf(vars[1]);
+            int y = Integer.valueOf(vars[2]);
 
-		// edgeDoubleClick
-		if (variables.containsKey("edgeDoubleClick")) {
-			if(LOGGER.isDebugEnabled()) LOGGER.debug("changeVariables edgeDoubleClick...");
+            graphProperties.idsToUpdate.add(id);
+            nodeDoubleClick(id, x, y);
+        }
 
-//			final String[] vars = (String[]) variables.get("edgeDoubleClick");
+        // edgeDoubleClick
+        if (variables.containsKey("edgeDoubleClick")) {
+            if (LOGGER.isDebugEnabled())
+                LOGGER.debug("changeVariables edgeDoubleClick...");
 
-//			int id = Integer.valueOf(vars[0]);
-//			int  x = Integer.valueOf(vars[1]);
-//			int  y = Integer.valueOf(vars[2]);
+            // final String[] vars = (String[])
+            // variables.get("edgeDoubleClick");
 
-			//TODO edgeDoubleClick maybe?
-			//graphProperties.idsToUpdate.add(id);
-			//edgeDoubleClick(id+"",x,y);
-		}
-		if (variables.containsKey("requestDone"))
-			currentGraphOperation = GraphOperation.NOTHING;
-	}
+            // int id = Integer.valueOf(vars[0]);
+            // int x = Integer.valueOf(vars[1]);
+            // int y = Integer.valueOf(vars[2]);
 
-	public void deleteEdge(int id){
-		operationMap.get("deleteEdges").add(id);
-	}
-	public void deleteNode(int id){
-		operationMap.get("deleteNodes").add(id);
-	}
+            // TODO edgeDoubleClick maybe?
+            // graphProperties.idsToUpdate.add(id);
+            // edgeDoubleClick(id+"",x,y);
+        }
+        if (variables.containsKey("requestDone"))
+            currentGraphOperation = GraphOperation.NOTHING;
+    }
 
-	/** delegate to GraphProperties.addNode(...) **/
-	public int addNode(String name, int x, int y, int nodeViewShape, String rgb){
-		return addNode(name, x, y, nodeViewShape, rgb, false);
-	}
-	/** delegate to GraphProperties.addNode(...) **/
-	public int addNode(String name, int x, int y, int nodeViewShape, String rgb, boolean update){
+    public void deleteEdge(int id) {
+        operationMap.get("deleteEdges").add(id);
+    }
 
-		int id = graphProperties.addNode(name, x, y, nodeViewShape, rgb);
-		return id;
-	}
+    public void deleteNode(int id) {
+        operationMap.get("deleteNodes").add(id);
+    }
 
-	/** delegate to GraphProperties.addEdge(...) **/
-	public Integer addEdge(int nodeAid, int nodeBid, String attribute) {
-		return graphProperties.addEdge(nodeAid, nodeBid, attribute);
-	}
+    /** delegate to GraphProperties.addNode(...) **/
+    public int addNode(String name, int x, int y, int nodeViewShape, String rgb) {
+        return addNode(name, x, y, nodeViewShape, rgb, false);
+    }
 
-	public void makeGraphOperation(GraphOperation go) {
-		currentGraphOperation = go;
-		requestRepaint();
-	}
+    /** delegate to GraphProperties.addNode(...) **/
+    public int addNode(String name, int x, int y, int nodeViewShape, String rgb, boolean update) {
 
+        int id = graphProperties.addNode(name, x, y, nodeViewShape, rgb);
+        return id;
+    }
 
-	public void repaintGraph() {
-		currentGraphOperation = GraphOperation.REPAINT;
-		requestRepaint();
-	}
+    /** delegate to GraphProperties.addEdge(...) **/
+    public Integer addEdge(int nodeAid, int nodeBid, String attribute) {
+        return graphProperties.addEdge(nodeAid, nodeBid, attribute);
+    }
 
-//	public void cleanGraph(){
-//		// TODO
-//	}
-	public void applyLayoutAlgorithm(final CyLayoutAlgorithm loAlgorithm) {
-		applyLayoutAlgorithm(loAlgorithm,false);
-	}
+    public void makeGraphOperation(GraphOperation go) {
+        currentGraphOperation = go;
+        requestRepaint();
+    }
 
-	public void applyLayoutAlgorithm(final CyLayoutAlgorithm loAlgorithm,boolean update) {
-		graphProperties.applyLayoutAlgorithm(loAlgorithm);
-		if(update){
-			currentGraphOperation = GraphOperation.REFRESH_NODE_POSTIONS;
-			requestRepaint();
-		}
-	}
+    public void repaintGraph() {
+        currentGraphOperation = GraphOperation.REPAINT;
+        requestRepaint();
+    }
 
-	/** Override this to handle node double clicks */
-	public void nodeDoubleClick(int nodeid, int x, int y){
-		currentGraphOperation = GraphOperation.UPDATE_NODE;
-		requestRepaint();
-	}
-//	/** Override this*/
-//	public void edgeDoubleClick(String edgeid, int x, int y){
-//		currentGraphOperation = GraphOperation.UPDATE_EDGE;
-//		requestRepaint();
-//	}
+    public void applyLayoutAlgorithm(final CyLayoutAlgorithm loAlgorithm) {
+        applyLayoutAlgorithm(loAlgorithm, false);
+    }
 
-	public void fitToView(){
-		currentGraphOperation = GraphOperation.FIT_TO_VIEW;
-		requestRepaint();
-	}
+    public void applyLayoutAlgorithm(final CyLayoutAlgorithm loAlgorithm, boolean update) {
+        graphProperties.applyLayoutAlgorithm(loAlgorithm);
+        if (update) {
+            currentGraphOperation = GraphOperation.REFRESH_NODE_POSTIONS;
+            requestRepaint();
+        }
+    }
 
-	public void zoomIn(boolean zoomIn){
-		if(zoomIn)
-			currentGraphOperation = GraphOperation.ZOOMIN;
-		else
-			currentGraphOperation = GraphOperation.ZOOMOUT;
-			requestRepaint();
-	}
+    /** Override this to handle node double clicks */
+    public void nodeDoubleClick(int nodeid, int x, int y) {
+        currentGraphOperation = GraphOperation.UPDATE_NODE;
+        requestRepaint();
+    }
 
-	public void scaleIn(boolean scaleIn){
-		if(scaleIn)
-			currentGraphOperation = GraphOperation.SCALEIN;
-		else
-			currentGraphOperation = GraphOperation.SCALEOUT;
-			requestRepaint();
-	}
+    // /** Override this*/
+    // public void edgeDoubleClick(String edgeid, int x, int y){
+    // currentGraphOperation = GraphOperation.UPDATE_EDGE;
+    // requestRepaint();
+    // }
 
-	public void updateNode(){
-		currentGraphOperation = GraphOperation.UPDATE_NODE;
-		requestRepaint();
-	}
+    public void fitToView() {
+        currentGraphOperation = GraphOperation.FIT_TO_VIEW;
+        requestRepaint();
+    }
+
+    public void zoomIn(boolean zoomIn) {
+        if (zoomIn)
+            currentGraphOperation = GraphOperation.ZOOMIN;
+        else
+            currentGraphOperation = GraphOperation.ZOOMOUT;
+        requestRepaint();
+    }
+
+    public void scaleIn(boolean scaleIn) {
+        if (scaleIn)
+            currentGraphOperation = GraphOperation.SCALEIN;
+        else
+            currentGraphOperation = GraphOperation.SCALEOUT;
+        requestRepaint();
+    }
+
+    public void updateNode() {
+        currentGraphOperation = GraphOperation.UPDATE_NODE;
+        requestRepaint();
+    }
 }
